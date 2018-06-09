@@ -144,7 +144,7 @@ matrix(old.p[(zi-1):(zi-lag),]-old.p[(zi-2):(zi-lag-1),],ncol=2))[2,1]+old.p[zi-
  }
  if (count.lim<0)
   otvbest=r.tvec(p,lag=lag,...)
- list(otv=otvbest,data.w.imputed=pbest,steps=count)
+ list(beta=otvbest$beta, gamma=otvbest$gamma, A=otvbest$A, lag=lag, res=otvbest$res, imputed=pbest, other.last.X=other.last.X, steps=count)
 }
 
 c.tveci=function(data, lag=1, print.out=FALSE, icount.lim=5, count.lim=100, ep=1e-4,...){
@@ -195,5 +195,24 @@ matrix(old.p[(zi-1):(zi-lag),]-old.p[(zi-2):(zi-lag-1),],ncol=2))[2,1]+old.p[zi-
  }
  if (count.lim<0)
   otvbest=c.tvec(p,lag=lag,...)
- list(otv=otvbest,data.w.imputed=pbest,steps=count)
+ list(beta=otvbest$beta, gamma=otvbest$gamma, A=otvbest$A, lag=lag, res=otvbest$res, imputed=pbest, other.last.X=other.last.X, steps=count)
 }
+
+predict.tveci=function(tveci.model){
+ nox=length(tveci.model$other.last.X)
+ n=nrow(tveci.model$imputed)
+ w=tveci.model$imputed[n,1]-tveci.model$beta*tveci.model$imputed[n,2]
+ gamma=tveci.model$gamma
+ X=c(w,1)
+ dlast=tveci.model$imputed[n:(n-tveci.model$lag+1),]-tveci.model$imputed[(n-1):(n-tveci.model$lag),]
+ for (i in 1:tveci.model$lag)
+  X=c(X,dlast[i,1],dlast[i,2])
+ X=c(X,tveci.model$other.last.X[n,])
+ predicted=matrix(0,2,1)
+ if (w<tveci.model$gamma)  
+  predicted=t(tveci.model$A[1:(2*tveci.model$lag+2+nox),])%*%X
+ else
+  predicted=t(tveci.model$A[(2*tveci.model$lag+3+nox):(4*tveci.model$lag+4+2*nox),])%*%X
+ predicted
+}
+
