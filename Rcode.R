@@ -96,7 +96,7 @@ predict.tvec=function(tvec.model, last, dlast, other.last.X=NULL){
  predicted
 }
 
-r.tveci=function(data, lag=1, print.out=FALSE, icount.lim=5, count.lim=100, ep=1e-4,...){
+r.tveci=function(data, lag=1, print.out=FALSE, icount.lim=5, count.lim=100, ep=1e-4, otherX=NULL,...){
  z=which(data[,3]==0)
  zz=which(data[,3]==1)
  p=data[,1:2]
@@ -130,7 +130,7 @@ matrix(old.p[(zi-1):(zi-lag),]-old.p[(zi-2):(zi-lag-1),],ncol=2))[2,1]+old.p[zi-
    }
   }
   idiff=sum(otv$res[,1]^2)
-  otv=r.tvec(p,lag=lag,...)
+  otv=r.tvec(p,lag=lag,otherX=otherX,...)
   if (idiff < idiffbest-ep){
    icount=0
    idiffbest=idiff 
@@ -143,11 +143,11 @@ matrix(old.p[(zi-1):(zi-lag),]-old.p[(zi-2):(zi-lag-1),],ncol=2))[2,1]+old.p[zi-
   count=count+1
  }
  if (count.lim<0)
-  otvbest=r.tvec(p,lag=lag,...)
- list(beta=otvbest$beta, gamma=otvbest$gamma, A=otvbest$A, lag=lag, res=otvbest$res, imputed=pbest, other.last.X=other.last.X, steps=count)
+  otvbest=r.tvec(p,lag=lag,otherX=otherX,...)
+ list(beta=otvbest$beta, gamma=otvbest$gamma, A=otvbest$A, lag=lag, res=otvbest$res, imputed=pbest, otherX=otherX, steps=count)
 }
 
-c.tveci=function(data, lag=1, print.out=FALSE, icount.lim=5, count.lim=100, ep=1e-4,...){
+c.tveci=function(data, lag=1, print.out=FALSE, icount.lim=5, count.lim=100, ep=1e-4, otherX=NULL, ...){
  z=which(data[,3]==0)
  zz=which(data[,3]==1)
  p=data[,1:2]
@@ -164,7 +164,7 @@ c.tveci=function(data, lag=1, print.out=FALSE, icount.lim=5, count.lim=100, ep=1
   }
  z=z[z>lag+1]
  nz=length(z)
- otv=c.tvec(p,lag=lag,...)
+ otv=c.tvec(p,lag=lag,otherX=otherX,...)
  idiff=Inf 
  idiffbest=Inf
  count=0
@@ -181,7 +181,7 @@ matrix(old.p[(zi-1):(zi-lag),]-old.p[(zi-2):(zi-lag-1),],ncol=2))[2,1]+old.p[zi-
     }
   }
   idiff=sum(otv$res[,1]^2)
-  otv=c.tvec(p,lag=lag,...)
+  otv=c.tvec(p,lag=lag,otherX=otherX,...)
   if (idiff < idiffbest-ep){
    icount=0
    idiffbest=idiff 
@@ -195,19 +195,19 @@ matrix(old.p[(zi-1):(zi-lag),]-old.p[(zi-2):(zi-lag-1),],ncol=2))[2,1]+old.p[zi-
  }
  if (count.lim<0)
   otvbest=c.tvec(p,lag=lag,...)
- list(beta=otvbest$beta, gamma=otvbest$gamma, A=otvbest$A, lag=lag, res=otvbest$res, imputed=pbest, other.last.X=other.last.X, steps=count)
+ list(beta=otvbest$beta, gamma=otvbest$gamma, A=otvbest$A, lag=lag, res=otvbest$res, imputed=pbest, otherX=otherX, steps=count)
 }
 
 predict.tveci=function(tveci.model){
- nox=length(tveci.model$other.last.X)
+ nox=length(tveci.model$otherX)
  n=nrow(tveci.model$imputed)
  w=tveci.model$imputed[n,1]-tveci.model$beta*tveci.model$imputed[n,2]
  gamma=tveci.model$gamma
  X=c(w,1)
- dlast=tveci.model$imputed[n:(n-tveci.model$lag+1),]-tveci.model$imputed[(n-1):(n-tveci.model$lag),]
+ dlast=matrix(tveci.model$imputed[n:(n-tveci.model$lag+1),],tveci.model$lag,2)-matrix(tveci.model$imputed[(n-1):(n-tveci.model$lag),],tveci.model$lag,2)
  for (i in 1:tveci.model$lag)
   X=c(X,dlast[i,1],dlast[i,2])
- X=c(X,tveci.model$other.last.X[n,])
+ X=c(X,tveci.model$otherX[n,])
  predicted=matrix(0,2,1)
  if (w<tveci.model$gamma)  
   predicted=t(tveci.model$A[1:(2*tveci.model$lag+2+nox),])%*%X
