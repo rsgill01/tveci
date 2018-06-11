@@ -1,5 +1,5 @@
 # tveci
-code for Threshold Vector Error Correction with Data Imputation
+Code for fitting Threshold Error Correction model with Data Imputation
 
 This repository includes the following five files.
 

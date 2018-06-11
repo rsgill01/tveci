@@ -65,7 +65,7 @@ void unique(double *A,int *n){
  }
 }
 
-void tvec(double *d, double *otherX, int *n, int *l, int *nb, int *ng, double *trm, int *cX, double *beta, double *gamma, double *A, double *res){
+void tvec(double *d, double *otherX, int *n, int *l, int *nb, int *ng, double *trm, int *cX, double *beta, double *gamma, double *A, double *res, double *minrss){
  int i,j,k;
  int kni,kn,jni,uni,tempint;
  double *ECbeta;
@@ -102,16 +102,14 @@ void tvec(double *d, double *otherX, int *n, int *l, int *nb, int *ng, double *t
  int ig;
  double tempsum=0.0;
  double tempri;
- double minrss=-1.0;
  dY=malloc(2*ni*sizeof(double));
  dYtemp=malloc(2*ni*sizeof(double));
- dX=malloc(2*(*l)*ni*sizeof(double));
+ ECTm1=malloc(ni*sizeof(double));
  dZ=malloc(ninj*sizeof(double));
  dZtemp=malloc(ninj*sizeof(double));
  Atemp=malloc(2*nj*sizeof(double));
  tempres=malloc(2*ni*sizeof(double));
  ECTi=malloc(ni*sizeof(double));
- ECTm1=malloc(2*(*l)*ni*sizeof(double));
  temprY=malloc((*n)*sizeof(double));
  temprX=malloc((*n)*sizeof(double));
  wrk=malloc(lw*sizeof(double));
@@ -120,7 +118,10 @@ void tvec(double *d, double *otherX, int *n, int *l, int *nb, int *ng, double *t
  ECbetaSD=malloc(sizeof(double));
  betagrid=malloc((*nb)*sizeof(double));
  gammagrid=malloc((*ng)*sizeof(double));
-
+ *minrss=-1.0;
+ if (*l>0){
+  dX=malloc(2*(*l)*ni*sizeof(double));
+ }
  for (k=0;k<2;k++){
   kni=k*ni;
   kn=k*(*n);
@@ -176,7 +177,7 @@ void tvec(double *d, double *otherX, int *n, int *l, int *nb, int *ng, double *t
       dZ[i+ni*(3+2*j)]=dX[i+ni*(2*j+1)];
      }      
      for (j=0;j<*cX;j++)
-      dZ[i+ni*(2+2**l+j)]=otherX[(*l)+i+j*(*n-1)];            
+      dZ[i+ni*(2+2**l+j)]=otherX[(*l)+i+j*(*n)];            
      dZ[i+ni*(2**l+*cX+2)]=0;
      dZ[i+ni*(2**l+*cX+3)]=0;
      for (j=0;j<*l;j++){
@@ -202,7 +203,7 @@ void tvec(double *d, double *otherX, int *n, int *l, int *nb, int *ng, double *t
       dZ[i+ni*(2**l+*cX+5+2*j)]=dX[i+ni*(2*j+1)];
      }      
      for (j=0;j<*cX;j++)
-      dZ[i+ni*(4+4**l+*cX+j)]=otherX[(*l)+i+j*(*n-1)];
+      dZ[i+ni*(4+4**l+*cX+j)]=otherX[(*l)+i+j*(*n)];
     }
    }
    dcopy_(&twni,dY,&intone,dYtemp,&intone);
@@ -217,8 +218,8 @@ void tvec(double *d, double *otherX, int *n, int *l, int *nb, int *ng, double *t
     tempsum=0.0;
     for (i=0;i<ni;i++)
      tempsum+=tempres[i]*tempres[i]+tempres[i+ni]*tempres[i+ni];
-    if ((minrss<0)|(tempsum<minrss)){
-     minrss=tempsum;
+    if ((*minrss<0)|(tempsum<*minrss)){
+     *minrss=tempsum;
      *beta=betagrid[ib];
      *gamma=gammagrid[ig];
      dcopy_(&twnj,Atemp,&intone,A,&intone);
@@ -226,6 +227,9 @@ void tvec(double *d, double *otherX, int *n, int *l, int *nb, int *ng, double *t
     } 
    }
   }
+ }
+ if (*l>0){
+  free(dX);
  }
  free(gammagrid);
  free(betagrid);
@@ -237,11 +241,10 @@ void tvec(double *d, double *otherX, int *n, int *l, int *nb, int *ng, double *t
  free(Atemp);
  free(temprX);
  free(temprY);
- free(ECTm1);
  free(ECTi);
  free(dZtemp);
  free(dZ);
- free(dX);
+ free(ECTm1);
  free(dYtemp);
  free(dY);
 }
